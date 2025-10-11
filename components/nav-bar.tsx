@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { getCurrentUser } from "@/lib/auth"
-import { UserButtonWrapper } from "@/components/user-button-wrapper"
-import { Building2, Package, ShoppingCart, Users, LayoutDashboard } from "lucide-react"
+import { Building2, Package, ShoppingCart, Users, LayoutDashboard, User } from "lucide-react"
 
 export async function NavBar() {
   const user = await getCurrentUser()
@@ -72,7 +71,13 @@ export async function NavBar() {
             <p className="font-medium">{user.name}</p>
             <p className="text-xs text-muted-foreground">{user.role}</p>
           </div>
-          <UserButtonWrapper />
+          <a
+            href="/user-profile"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 text-gray-600 transition-colors hover:bg-gray-300"
+            title="Profile"
+          >
+            <User className="h-5 w-5" />
+          </a>
         </div>
       </div>
     </nav>
