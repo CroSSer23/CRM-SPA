@@ -1,0 +1,197 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  PROCUREMENT
+  REQUESTER
+}
+
+enum RequisitionStatus {
+  DRAFT
+  SUBMITTED
+  EDITED
+  ORDERED
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CLOSED
+}
+
+enum Unit {
+  PCS
+  ML
+  L
+  G
+  KG
+  PACK
+  BOX
+}
+
+model User {
+  id                String             @id @default(cuid())
+  clerkId           String             @unique
+  email             String             @unique
+  name              String
+  role              Role               @default(REQUESTER)
+  locations         LocationUser[]
+  requisitions      Requisition[]
+  activityLogs      ActivityLog[]
+  attachments       Attachment[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([clerkId])
+  @@index([email])
+}
+
+model Location {
+  id           String            @id @default(cuid())
+  name         String
+  address      String?
+  users        LocationUser[]
+  assignments  LocationProduct[]
+  requisitions Requisition[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([name])
+}
+
+model LocationUser {
+  id         String   @id @default(cuid())
+  userId     String
+  locationId String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, locationId])
+  @@index([userId])
+  @@index([locationId])
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([name])
+}
+
+model Product {
+  id              String            @id @default(cuid())
+  sku             String?           @unique
+  name            String
+  unit            Unit              @default(PCS)
+  categoryId      String?
+  category        Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  description     String?
+  active          Boolean           @default(true)
+  assignments     LocationProduct[]
+  requisitionItems RequisitionItem[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([name])
+  @@index([categoryId])
+  @@index([active])
+}
+
+model LocationProduct {
+  id           String   @id @default(cuid())
+  locationId   String
+  productId    String
+  minStock     Int?
+  preferredQty Int?
+  location     Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([locationId, productId])
+  @@index([locationId])
+  @@index([productId])
+}
+
+model Requisition {
+  id          String            @id @default(cuid())
+  locationId  String
+  createdById String
+  status      RequisitionStatus @default(DRAFT)
+  note        String?
+  items       RequisitionItem[]
+  history     ActivityLog[]
+  attachments Attachment[]
+  poNumber    String?
+  invoiceId   String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  location    Location          @relation(fields: [locationId], references: [id])
+  createdBy   User              @relation(fields: [createdById], references: [id])
+
+  @@index([locationId])
+  @@index([createdById])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model RequisitionItem {
+  id            String      @id @default(cuid())
+  requisitionId String
+  productId     String
+  requestedQty  Int
+  approvedQty   Int?
+  receivedQty   Int?
+  note          String?
+  product       Product     @relation(fields: [productId], references: [id])
+  requisition   Requisition @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([requisitionId, productId])
+  @@index([requisitionId])
+  @@index([productId])
+}
+
+model Attachment {
+  id            String       @id @default(cuid())
+  requisitionId String?
+  url           String
+  type          String       // PO, INVOICE, PHOTO
+  uploadedById  String
+  createdAt     DateTime     @default(now())
+  requisition   Requisition? @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+  uploadedBy    User         @relation(fields: [uploadedById], references: [id])
+
+  @@index([requisitionId])
+  @@index([uploadedById])
+}
+
+model ActivityLog {
+  id            String             @id @default(cuid())
+  requisitionId String
+  actorId       String
+  action        String             // SUBMIT, EDIT, ORDER, RECEIVE, CLOSE, COMMENT
+  fromStatus    RequisitionStatus?
+  toStatus      RequisitionStatus?
+  message       String?
+  createdAt     DateTime           @default(now())
+  requisition   Requisition        @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+  actor         User               @relation(fields: [actorId], references: [id])
+
+  @@index([requisitionId])
+  @@index([actorId])
+  @@index([createdAt])
+}
+
