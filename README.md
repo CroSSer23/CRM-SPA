@@ -140,6 +140,7 @@ npm run dev
 2. Створіть новий Application
 3. Скопіюйте API ключі до \`.env\`
 4. Налаштуйте Email/Password провайдер
+5. **Важливо:** Проєкт використовує Clerk Hosted Pages (auth відбувається на clerk.app, без custom pages)
 
 ### Database (Neon/Supabase)
 
