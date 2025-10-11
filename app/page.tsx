@@ -15,11 +15,21 @@ export default async function HomePage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100">
       <div className="mx-auto max-w-4xl px-4 text-center">
+        <div className="mb-8 flex justify-center">
+          <img 
+            src="https://coconcompany.com/cdn/shop/files/Logo_cocon_lightBrown.svg?height=96&v=1716202292" 
+            alt="COCON COMPANY"
+            className="h-24 w-auto"
+          />
+        </div>
         <h1 className="mb-4 text-5xl font-bold text-gray-900">
-          SPA Procurement System
+          COCON COMPANY
         </h1>
+        <p className="mb-2 text-2xl font-semibold text-amber-800">
+          Procurement System
+        </p>
         <p className="mb-8 text-xl text-gray-600">
-          Centralized procurement management for SPA locations in London
+          Centralized procurement management for SPA locations
         </p>
         <div className="flex gap-4 justify-center">
           <Link href="/sign-in">

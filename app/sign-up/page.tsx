@@ -67,9 +67,16 @@ export default function SignUpPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50">
       <Card className="w-full max-w-md">
+        <div className="flex justify-center pt-6">
+          <img 
+            src="https://coconcompany.com/cdn/shop/files/Logo_cocon_lightBrown.svg?height=96&v=1716202292" 
+            alt="COCON COMPANY"
+            className="h-16 w-auto"
+          />
+        </div>
         <CardHeader>
           <CardTitle>Sign Up</CardTitle>
-          <CardDescription>Create a new account to get started</CardDescription>
+          <CardDescription>Create a new account for COCON COMPANY system</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">

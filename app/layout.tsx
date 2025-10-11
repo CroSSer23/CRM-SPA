@@ -6,8 +6,8 @@ import { Providers } from "@/components/providers"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "SPA Procurement System",
-  description: "Centralized procurement system for SPA locations in London",
+  title: "COCON COMPANY - Procurement System",
+  description: "Centralized procurement management system for COCON COMPANY SPA locations",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

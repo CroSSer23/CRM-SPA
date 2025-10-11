@@ -27,9 +27,12 @@ export function Sidebar({ userRole }: SidebarProps) {
   return (
     <aside className="w-64 border-r bg-white h-screen sticky top-0 flex flex-col">
       <div className="p-6 border-b">
-        <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl">
-          <ShoppingCart className="h-6 w-6 text-primary" />
-          <span>SPA Procurement</span>
+        <Link href="/dashboard" className="flex items-center gap-3">
+          <img 
+            src="https://coconcompany.com/cdn/shop/files/Logo_cocon_lightBrown.svg?height=96&v=1716202292" 
+            alt="COCON COMPANY"
+            className="h-12 w-auto"
+          />
         </Link>
       </div>
 
