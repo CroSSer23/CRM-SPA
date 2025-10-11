@@ -1,128 +1,88 @@
-import { prisma } from "@/lib/prisma"
-import { getRBACContext } from "@/lib/auth"
-import { Role, RequisitionStatus } from "@prisma/client"
+import { requireUser } from "@/lib/auth"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { StatusBadge } from "@/components/status-badge"
 import Link from "next/link"
-import { formatDate } from "@/lib/utils"
-
-async function getRequisitionsByStatus(rbac: { userId: string; role: Role; locationIds: string[] }) {
-  const where: any = {}
-
-  if (rbac.role === Role.REQUESTER) {
-    where.AND = [{ createdById: rbac.userId }, { locationId: { in: rbac.locationIds } }]
-  }
-
-  const requisitions = await prisma.requisition.findMany({
-    where,
-    include: {
-      location: true,
-      createdBy: {
-        select: {
-          name: true,
-        },
-      },
-      items: {
-        select: {
-          requestedQty: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    take: 50,
-  })
-
-  // Group by status
-  const grouped: Record<RequisitionStatus, typeof requisitions> = {
-    DRAFT: [],
-    SUBMITTED: [],
-    EDITED: [],
-    ORDERED: [],
-    PARTIALLY_RECEIVED: [],
-    RECEIVED: [],
-    CLOSED: [],
-  }
-
-  requisitions.forEach((req) => {
-    grouped[req.status].push(req)
-  })
-
-  return grouped
-}
+import { Button } from "@/components/ui/button"
 
 export default async function DashboardPage() {
-  const rbac = await getRBACContext()
-  
-  if (!rbac.user) {
-    return <div>Please sign in</div>
-  }
-
-  const requisitionsByStatus = await getRequisitionsByStatus(rbac)
-
-  const statuses: RequisitionStatus[] = [
-    "SUBMITTED",
-    "EDITED",
-    "ORDERED",
-    "PARTIALLY_RECEIVED",
-    "RECEIVED",
-    "CLOSED",
-  ]
+  const user = await requireUser()
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Overview of all requisitions</p>
+    <div className="min-h-screen bg-slate-50 p-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <p className="text-muted-foreground">Welcome back, {user.name} ({user.role})</p>
+          </div>
+          <form action="/api/logout" method="POST">
+            <Button type="submit" variant="outline">Sign Out</Button>
+          </form>
         </div>
-        <Link
-          href="/requisitions/new"
-          className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
-        >
-          New Requisition
-        </Link>
-      </div>
 
-      {/* Kanban Board */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {statuses.map((status) => {
-          const reqs = requisitionsByStatus[status]
-          return (
-            <Card key={status}>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center justify-between text-sm font-medium">
-                  <StatusBadge status={status} />
-                  <span className="text-muted-foreground">({reqs.length})</span>
-                </CardTitle>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Card>
+            <CardHeader>
+              <CardTitle>Requisitions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Manage your purchase requisitions
+              </p>
+              <Link href="/requisitions">
+                <Button>View Requisitions</Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          {(user.role === "ADMIN" || user.role === "PROCUREMENT") && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Catalog</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                {reqs.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">No requisitions</p>
-                ) : (
-                  reqs.map((req) => (
-                    <Link key={req.id} href={`/requisitions/${req.id}`}>
-                      <Card className="cursor-pointer transition-shadow hover:shadow-md">
-                        <CardContent className="p-3">
-                          <p className="text-sm font-medium">{req.location.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {req.items.length} items
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatDate(req.createdAt)}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))
-                )}
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Manage products and categories
+                </p>
+                <Link href="/catalog">
+                  <Button>View Catalog</Button>
+                </Link>
               </CardContent>
             </Card>
-          )
-        })}
+          )}
+
+          {user.role === "ADMIN" && (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Locations</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Manage SPA locations
+                  </p>
+                  <Link href="/locations">
+                    <Button>View Locations</Button>
+                  </Link>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Users</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Manage users and roles
+                  </p>
+                  <Link href="/users">
+                    <Button>View Users</Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </div>
       </div>
     </div>
   )
 }
-

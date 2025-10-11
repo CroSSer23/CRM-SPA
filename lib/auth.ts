@@ -1,19 +1,18 @@
-import { getServerSession } from "next-auth/next"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { Role } from "@prisma/client"
-import { authOptions } from "@/app/api/auth/[...nextauth]/options"
+import { getSession } from "@/lib/jwt"
 
 export async function getCurrentUser() {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getSession()
     
-    if (!session?.user?.email) {
+    if (!session?.userId) {
       return null
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
+      where: { id: session.userId }
     })
 
     return user
@@ -32,59 +31,22 @@ export async function requireUser() {
   return user
 }
 
-export async function requireRole(allowedRoles: Role[]) {
+export async function requireAdmin() {
   const user = await requireUser()
   
-  if (!allowedRoles.includes(user.role)) {
+  if (user.role !== Role.ADMIN) {
     redirect('/dashboard')
   }
   
   return user
 }
 
-export async function requireAdmin() {
-  return requireRole([Role.ADMIN])
-}
-
 export async function requireProcurement() {
-  return requireRole([Role.PROCUREMENT, Role.ADMIN])
-}
-
-// Simple RBAC context - returns everything needed
-export async function getRBACContext() {
-  const user = await getCurrentUser()
-
-  if (!user) {
-    return {
-      user: null,
-      userId: '',
-      role: Role.REQUESTER as Role,
-      locationIds: [] as string[],
-      isAdmin: false,
-      isProcurement: false,
-      isRequester: false,
-    }
-  }
-
-  // Get user's location IDs
-  const userLocations = await prisma.locationUser.findMany({
-    where: { userId: user.id },
-    select: { locationId: true }
-  })
+  const user = await requireUser()
   
-  const locationIds = userLocations.map(loc => loc.locationId)
-
-  const isAdmin = user.role === Role.ADMIN
-  const isProcurement = user.role === Role.PROCUREMENT
-  const isRequester = user.role === Role.REQUESTER
-
-  return {
-    user,
-    userId: user.id,
-    role: user.role,
-    locationIds,
-    isAdmin,
-    isProcurement,
-    isRequester,
+  if (user.role !== Role.ADMIN && user.role !== Role.PROCUREMENT) {
+    redirect('/dashboard')
   }
+  
+  return user
 }

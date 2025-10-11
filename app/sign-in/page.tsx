@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -25,14 +24,15 @@ export default function SignInPage() {
     setLoading(true)
 
     try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       })
 
-      if (result?.error) {
-        setError("Invalid email or password")
+      if (!response.ok) {
+        const data = await response.json()
+        setError(data.error || "Invalid credentials")
       } else {
         router.push("/dashboard")
         router.refresh()
