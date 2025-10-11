@@ -127,3 +127,7 @@ export function canManageCatalog(userRole: Role) {
 export function canManageUsers(userRole: Role) {
   return userRole === Role.ADMIN
 }
+
+export function canManageLocations(userRole: Role) {
+  return userRole === Role.ADMIN
+}
