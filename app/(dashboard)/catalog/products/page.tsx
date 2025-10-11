@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -9,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Pencil, Trash2 } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 interface Product {
   id: string
@@ -16,6 +16,7 @@ interface Product {
   sku?: string
   unit: string
   description?: string
+  active: boolean
   category?: { id: string; name: string }
 }
 
@@ -27,7 +28,8 @@ interface Category {
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
-  const [selectedCategory, setSelectedCategory] = useState<string>("all")
+  const [filterCategory, setFilterCategory] = useState<string>("all")
+  const [searchQuery, setSearchQuery] = useState("")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [formData, setFormData] = useState({
@@ -109,21 +111,21 @@ export default function ProductsPage() {
     })
   }
 
-  const filteredProducts = selectedCategory === "all"
-    ? products
-    : products.filter(p => p.category?.id === selectedCategory)
-
-  const productsByCategory = categories.map(cat => ({
-    category: cat,
-    products: products.filter(p => p.category?.id === cat.id)
-  }))
-  
-  const uncategorized = products.filter(p => !p.category)
+  const filteredProducts = products
+    .filter(p => filterCategory === "all" || p.category?.id === filterCategory)
+    .filter(p => 
+      searchQuery === "" || 
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.sku?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Products</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Products</h1>
+          <p className="text-muted-foreground">{products.length} products in catalog</p>
+        </div>
         <Dialog open={dialogOpen} onOpenChange={(open) => {
           setDialogOpen(open)
           if (!open) resetForm()
@@ -156,6 +158,7 @@ export default function ProductsPage() {
                   <Input
                     value={formData.sku}
                     onChange={(e) => setFormData({...formData, sku: e.target.value})}
+                    placeholder="SKU-001"
                   />
                 </div>
                 <div>
@@ -194,6 +197,7 @@ export default function ProductsPage() {
                   <Input
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    placeholder="Product description..."
                   />
                 </div>
               </div>
@@ -205,80 +209,84 @@ export default function ProductsPage() {
         </Dialog>
       </div>
 
-      <div className="space-y-6">
-        {productsByCategory.map(({ category, products: catProducts }) => (
-          catProducts.length > 0 && (
-            <div key={category.id}>
-              <h2 className="text-xl font-semibold mb-3">{category.name}</h2>
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {catProducts.map((product) => (
-                  <Card key={product.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <h3 className="font-medium">{product.name}</h3>
-                          {product.description && (
-                            <p className="text-xs text-muted-foreground mt-1">{product.description}</p>
-                          )}
-                        </div>
-                        <div className="flex gap-1">
-                          <Button size="icon" variant="ghost" onClick={() => handleEdit(product)}>
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                          <Button size="icon" variant="ghost" onClick={() => handleDelete(product.id)}>
-                            <Trash2 className="h-3 w-3 text-destructive" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="flex gap-2 flex-wrap">
-                        <Badge variant="outline" className="text-xs">{product.unit}</Badge>
-                        {product.sku && (
-                          <Badge variant="secondary" className="text-xs">{product.sku}</Badge>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )
-        ))}
-        
-        {uncategorized.length > 0 && (
-          <div>
-            <h2 className="text-xl font-semibold mb-3">Uncategorized</h2>
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {uncategorized.map((product) => (
-                <Card key={product.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <h3 className="font-medium">{product.name}</h3>
-                        {product.description && (
-                          <p className="text-xs text-muted-foreground mt-1">{product.description}</p>
-                        )}
-                      </div>
-                      <div className="flex gap-1">
-                        <Button size="icon" variant="ghost" onClick={() => handleEdit(product)}>
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                        <Button size="icon" variant="ghost" onClick={() => handleDelete(product.id)}>
-                          <Trash2 className="h-3 w-3 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                      <Badge variant="outline" className="text-xs">{product.unit}</Badge>
-                      {product.sku && (
-                        <Badge variant="secondary" className="text-xs">{product.sku}</Badge>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <Input
+            placeholder="Search products by name or SKU..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <Select value={filterCategory} onValueChange={setFilterCategory}>
+          <SelectTrigger className="w-48">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {categories.map(cat => (
+              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="rounded-md border bg-white">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[40%]">Name</TableHead>
+              <TableHead>SKU</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Unit</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredProducts.map((product) => (
+              <TableRow key={product.id}>
+                <TableCell className="font-medium">{product.name}</TableCell>
+                <TableCell>
+                  {product.sku ? (
+                    <Badge variant="outline" className="text-xs">{product.sku}</Badge>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">—</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {product.category ? (
+                    <Badge variant="secondary" className="text-xs">{product.category.name}</Badge>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">—</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="text-xs">{product.unit}</Badge>
+                </TableCell>
+                <TableCell className="max-w-xs truncate text-sm text-muted-foreground">
+                  {product.description || "—"}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-2">
+                    <Button size="icon" variant="ghost" onClick={() => handleEdit(product)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => handleDelete(product.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            {filteredProducts.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  No products found
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   )
