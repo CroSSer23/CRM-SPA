@@ -119,3 +119,7 @@ export function canChangeStatus(userRole: Role, fromStatus: string, toStatus: st
   // PROCUREMENT and ADMIN can change any status
   return true
 }
+
+export function canManageCatalog(userRole: Role) {
+  return userRole === Role.ADMIN || userRole === Role.PROCUREMENT
+}
