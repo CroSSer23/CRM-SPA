@@ -189,45 +189,13 @@ async function main() {
     }),
   ])
 
-  // Note: Users will be created automatically by Clerk when they sign up
-  // For seeding, we'll create placeholder users
-  console.log("Creating test users...")
-
-  // Create admin user
-  const adminUser = await prisma.user.create({
+  // Assign users to locations
+  await prisma.locationUser.create({
     data: {
-      email: "admin@procurement.spa",
-      name: "Admin User",
-      role: Role.ADMIN,
-    },
+      userId: requesterUser.id,
+      locationId: locations[0].id,
+    }
   })
-
-  // Create procurement user
-  const procurementUser = await prisma.user.create({
-    data: {
-      email: "procurement@procurement.spa",
-      name: "Procurement Officer",
-      role: Role.PROCUREMENT,
-    },
-  })
-
-  // Create requester users for each location
-  const requesterUsers = await Promise.all(
-    locations.map((location, index) =>
-      prisma.user.create({
-        data: {
-          email: `manager${index + 1}@procurement.spa`,
-          name: `${location.name} Manager`,
-          role: Role.REQUESTER,
-          locations: {
-            create: {
-              locationId: location.id,
-            },
-          },
-        },
-      })
-    )
-  )
 
   // Assign products to locations
   console.log("Assigning products to locations...")
