@@ -1,17 +1,18 @@
-import { auth, currentUser } from "@clerk/nextjs"
+import { auth as clerkAuth } from "@clerk/nextjs/server"
+import { currentUser as clerkCurrentUser } from "@clerk/nextjs/server"
 import { prisma } from "@/lib/prisma"
 import { Role } from "@prisma/client"
 import { redirect } from "next/navigation"
 import { RBACContext } from "./types"
 
 export async function getCurrentUser() {
-  const { userId } = auth()
+  const { userId } = await clerkAuth()
 
   if (!userId) {
     return null
   }
 
-  const clerkUser = await currentUser()
+  const clerkUser = await clerkCurrentUser()
   if (!clerkUser) {
     return null
   }
