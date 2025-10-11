@@ -12,7 +12,11 @@ export interface SessionData {
 }
 
 export async function createToken(data: SessionData) {
-  const token = await new SignJWT(data)
+  const token = await new SignJWT({ 
+    userId: data.userId,
+    email: data.email,
+    role: data.role
+  })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("7d")
     .sign(SECRET)
@@ -23,7 +27,11 @@ export async function createToken(data: SessionData) {
 export async function verifyToken(token: string): Promise<SessionData | null> {
   try {
     const { payload } = await jwtVerify(token, SECRET)
-    return payload as SessionData
+    return {
+      userId: payload.userId as string,
+      email: payload.email as string,
+      role: payload.role as string,
+    }
   } catch (error) {
     return null
   }
