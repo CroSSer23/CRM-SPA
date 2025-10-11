@@ -131,3 +131,11 @@ export function canManageUsers(userRole: Role) {
 export function canManageLocations(userRole: Role) {
   return userRole === Role.ADMIN
 }
+
+export function canReceiveItems(userRole: Role) {
+  return userRole === Role.ADMIN || userRole === Role.PROCUREMENT
+}
+
+export function canChangeRequisitionStatus(userRole: Role) {
+  return userRole === Role.ADMIN || userRole === Role.PROCUREMENT
+}
