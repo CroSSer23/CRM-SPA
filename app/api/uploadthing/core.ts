@@ -1,6 +1,5 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/app/api/auth/[...nextauth]/options"
+import { getCurrentUser } from "@/lib/auth"
 
 const f = createUploadthing()
 
@@ -10,11 +9,11 @@ export const ourFileRouter = {
     image: { maxFileSize: "4MB", maxFileCount: 5 },
   })
     .middleware(async () => {
-      const session = await getServerSession(authOptions)
+      const user = await getCurrentUser()
 
-      if (!session?.user?.id) throw new Error("Unauthorized")
+      if (!user) throw new Error("Unauthorized")
 
-      return { userId: session.user.id }
+      return { userId: user.id }
     })
     .onUploadComplete(async ({ metadata, file }) => {
       console.log("Upload complete for userId:", metadata.userId)
@@ -25,4 +24,3 @@ export const ourFileRouter = {
 } satisfies FileRouter
 
 export type OurFileRouter = typeof ourFileRouter
-
