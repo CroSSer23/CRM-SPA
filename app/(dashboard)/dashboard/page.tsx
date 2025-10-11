@@ -78,28 +78,41 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="flex gap-4 overflow-x-auto pb-4">
         {statuses.map((status) => (
-          <Card key={status}>
-            <CardHeader>
-              <StatusBadge status={status} />
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {requisitionsByStatus[status].map((req) => (
-                <Link key={req.id} href={`/requisitions/${req.id}`}>
-                  <div className="p-3 rounded border hover:bg-slate-50 transition-colors cursor-pointer">
-                    <p className="font-medium text-sm">{req.location.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {req.items.length} items • {formatDate(req.createdAt)}
-                    </p>
+          <div key={status} className="flex-shrink-0 w-80">
+            <Card className="h-full">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <StatusBadge status={status} />
+                  <span className="text-xs text-muted-foreground">
+                    {requisitionsByStatus[status].length}
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto">
+                {requisitionsByStatus[status].map((req) => (
+                  <Link key={req.id} href={`/requisitions/${req.id}`}>
+                    <div className="p-3 rounded-lg border bg-white hover:shadow-md transition-all cursor-pointer">
+                      <p className="font-medium text-sm mb-1">{req.location.name}</p>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        {req.createdBy.name}
+                      </p>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{req.items.length} items</span>
+                        <span>{formatDate(req.createdAt)}</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+                {requisitionsByStatus[status].length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-xs text-muted-foreground">No items</p>
                   </div>
-                </Link>
-              ))}
-              {requisitionsByStatus[status].length === 0 && (
-                <p className="text-xs text-muted-foreground text-center py-4">No items</p>
-              )}
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         ))}
       </div>
     </div>
