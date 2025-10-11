@@ -23,7 +23,7 @@ async function getLocations() {
 export default async function LocationsPage() {
   const rbac = await getRBACContext()
 
-  if (!canManageLocations(rbac)) {
+  if (!rbac.user || !canManageLocations(rbac.user.role)) {
     redirect("/")
   }
 

@@ -23,7 +23,7 @@ async function getUsers() {
 export default async function UsersPage() {
   const rbac = await getRBACContext()
 
-  if (!canManageUsers(rbac)) {
+  if (!rbac.user || !canManageUsers(rbac.user.role)) {
     redirect("/")
   }
 
