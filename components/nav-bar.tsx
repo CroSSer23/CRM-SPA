@@ -1,6 +1,6 @@
 import Link from "next/link"
-import { UserButton } from "@clerk/nextjs"
 import { getCurrentUser } from "@/lib/auth"
+import { UserButtonWrapper } from "@/components/user-button-wrapper"
 import { Building2, Package, ShoppingCart, Users, LayoutDashboard } from "lucide-react"
 
 export async function NavBar() {
@@ -72,7 +72,7 @@ export async function NavBar() {
             <p className="font-medium">{user.name}</p>
             <p className="text-xs text-muted-foreground">{user.role}</p>
           </div>
-          <UserButton afterSignOutUrl="/sign-in" />
+          <UserButtonWrapper />
         </div>
       </div>
     </nav>

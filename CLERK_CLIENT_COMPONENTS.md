@@ -4,12 +4,14 @@
 
 ### ✅ Client Components (потрібен "use client")
 
-**Clerk UI компоненти:**
+**Clerk Interactive UI компоненти:**
 ```tsx
 "use client"  // ← ОБОВ'ЯЗКОВО!
 
-import { SignIn, SignUp, UserButton, UserProfile } from "@clerk/nextjs"
+import { UserButton, UserProfile, OrganizationSwitcher } from "@clerk/nextjs"
 ```
+
+**Важливо:** `<SignIn />` та `<SignUp />` НЕ потребують "use client" - вони працюють як Server Components!
 
 **Clerk hooks:**
 ```tsx
@@ -25,6 +27,16 @@ export default function MyComponent() {
 ```
 
 ### ✅ Server Components (без "use client")
+
+**Clerk Auth pages:**
+```tsx
+// Файл: app/sign-in/[[...sign-in]]/page.tsx
+import { SignIn } from "@clerk/nextjs"
+
+export default function SignInPage() {
+  return <SignIn />
+}
+```
 
 **Auth functions:**
 ```tsx
