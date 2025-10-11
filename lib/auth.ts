@@ -123,3 +123,7 @@ export function canChangeStatus(userRole: Role, fromStatus: string, toStatus: st
 export function canManageCatalog(userRole: Role) {
   return userRole === Role.ADMIN || userRole === Role.PROCUREMENT
 }
+
+export function canManageUsers(userRole: Role) {
+  return userRole === Role.ADMIN
+}

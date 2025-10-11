@@ -24,7 +24,7 @@ async function getCategories() {
 export default async function CategoriesPage() {
   const rbac = await getRBACContext()
 
-  if (!canManageCatalog(rbac)) {
+  if (!rbac.user || !canManageCatalog(rbac.user.role)) {
     redirect("/")
   }
 
