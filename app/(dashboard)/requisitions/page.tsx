@@ -33,7 +33,24 @@ async function getRequisitions(rbac: { userId: string; role: Role; locationIds: 
 
 export default async function RequisitionsPage() {
   const rbac = await getRBACContext()
-  const requisitions = await getRequisitions(rbac)
+  
+  if (!rbac.user) {
+    return <div>Please sign in</div>
+  }
+
+  // Get user's location IDs
+  const userLocations = await prisma.locationUser.findMany({
+    where: { userId: rbac.user.id },
+    select: { locationId: true }
+  })
+  
+  const locationIds = userLocations.map(loc => loc.locationId)
+
+  const requisitions = await getRequisitions({
+    userId: rbac.user.id,
+    role: rbac.user.role,
+    locationIds
+  })
 
   return (
     <div className="space-y-6">
