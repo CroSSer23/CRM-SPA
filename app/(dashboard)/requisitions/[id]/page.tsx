@@ -18,7 +18,6 @@ async function getRequisition(id: string) {
           name: true,
           email: true,
           role: true,
-          clerkId: true,
           createdAt: true,
           updatedAt: true,
         },

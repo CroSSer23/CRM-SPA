@@ -18,7 +18,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             name: true,
             email: true,
             role: true,
-            clerkId: true,
             createdAt: true,
             updatedAt: true,
           },

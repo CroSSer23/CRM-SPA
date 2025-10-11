@@ -196,7 +196,6 @@ async function main() {
   // Create admin user
   const adminUser = await prisma.user.create({
     data: {
-      clerkId: "seed_admin",
       email: "admin@procurement.spa",
       name: "Admin User",
       role: Role.ADMIN,
@@ -206,7 +205,6 @@ async function main() {
   // Create procurement user
   const procurementUser = await prisma.user.create({
     data: {
-      clerkId: "seed_procurement",
       email: "procurement@procurement.spa",
       name: "Procurement Officer",
       role: Role.PROCUREMENT,
@@ -218,7 +216,6 @@ async function main() {
     locations.map((location, index) =>
       prisma.user.create({
         data: {
-          clerkId: `seed_requester_${index + 1}`,
           email: `manager${index + 1}@procurement.spa`,
           name: `${location.name} Manager`,
           role: Role.REQUESTER,
