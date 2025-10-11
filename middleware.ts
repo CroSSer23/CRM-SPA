@@ -1,27 +1,43 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
+import { getToken } from "next-auth/jwt"
 
-// Define public routes
-const isPublicRoute = createRouteMatcher([
-  '/',  // Home/Landing page
-  '/sign-in(.*)',  // Sign-in redirect page
-  '/sign-up(.*)',  // Sign-up redirect page
-  '/api/uploadthing(.*)',  // UploadThing needs to be public
-  '/api/webhook(.*)',  // Webhooks need to be public
-])
+// Define public routes that don't require authentication
+const publicRoutes = [
+  "/",
+  "/sign-in",
+  "/sign-up",
+  "/api/auth",
+  "/api/register"
+]
 
-// Protect all routes except public ones
-export default clerkMiddleware((auth, request) => {
-  if (!isPublicRoute(request)) {
-    auth().protect()
+export async function middleware(request: NextRequest) {
+  const token = await getToken({ req: request })
+  const { pathname } = request.nextUrl
+
+  // Check if the route is public
+  const isPublicRoute = publicRoutes.some(route => 
+    pathname === route || pathname.startsWith(route + "/")
+  )
+
+  // If user is not authenticated and trying to access protected route
+  if (!token && !isPublicRoute) {
+    const url = new URL("/sign-in", request.url)
+    url.searchParams.set("callbackUrl", pathname)
+    return NextResponse.redirect(url)
   }
-})
+
+  // If user is authenticated and trying to access auth pages
+  if (token && (pathname === "/sign-in" || pathname === "/sign-up")) {
+    return NextResponse.redirect(new URL("/dashboard", request.url))
+  }
+
+  return NextResponse.next()
+}
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    // Always run for API routes
     "/(api|trpc)(.*)",
   ],
 }
-

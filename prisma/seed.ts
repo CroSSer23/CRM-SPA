@@ -1,9 +1,47 @@
 import { PrismaClient, Role, Unit } from "@prisma/client"
+import bcrypt from "bcryptjs"
 
 const prisma = new PrismaClient()
 
 async function main() {
   console.log("🌱 Starting seed...")
+
+  // Create users
+  console.log("Creating users...")
+  const adminUser = await prisma.user.upsert({
+    where: { email: "admin@spa.com" },
+    update: {},
+    create: {
+      email: "admin@spa.com",
+      name: "Admin User",
+      password: await bcrypt.hash("admin123", 10),
+      role: "ADMIN",
+    },
+  })
+
+  const procurementUser = await prisma.user.upsert({
+    where: { email: "procurement@spa.com" },
+    update: {},
+    create: {
+      email: "procurement@spa.com",
+      name: "Procurement Manager",
+      password: await bcrypt.hash("procurement123", 10),
+      role: "PROCUREMENT",
+    },
+  })
+
+  const requesterUser = await prisma.user.upsert({
+    where: { email: "john@spa.com" },
+    update: {},
+    create: {
+      email: "john@spa.com",
+      name: "John Doe",
+      password: await bcrypt.hash("john123", 10),
+      role: "REQUESTER",
+    },
+  })
+
+  console.log("Created users:", { adminUser, procurementUser, requesterUser })
 
   // Create categories
   console.log("Creating categories...")

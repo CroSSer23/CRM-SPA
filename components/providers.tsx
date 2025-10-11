@@ -1,13 +1,13 @@
 "use client"
 
-import { ClerkProvider } from "@clerk/nextjs"
+import { SessionProvider } from "next-auth/react"
 import { Toaster } from "@/components/ui/toaster"
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider>
+    <SessionProvider>
       {children}
       <Toaster />
-    </ClerkProvider>
+    </SessionProvider>
   )
 }

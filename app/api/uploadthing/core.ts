@@ -1,5 +1,6 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next"
-import { auth } from "@clerk/nextjs/server"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/app/api/auth/[...nextauth]/options"
 
 const f = createUploadthing()
 
@@ -9,11 +10,11 @@ export const ourFileRouter = {
     image: { maxFileSize: "4MB", maxFileCount: 5 },
   })
     .middleware(async () => {
-      const { userId } = await auth()
+      const session = await getServerSession(authOptions)
 
-      if (!userId) throw new Error("Unauthorized")
+      if (!session?.user?.id) throw new Error("Unauthorized")
 
-      return { userId }
+      return { userId: session.user.id }
     })
     .onUploadComplete(async ({ metadata, file }) => {
       console.log("Upload complete for userId:", metadata.userId)

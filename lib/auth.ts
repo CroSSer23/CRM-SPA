@@ -1,146 +1,121 @@
-import { auth as clerkAuth } from "@clerk/nextjs/server"
-import { currentUser as clerkCurrentUser } from "@clerk/nextjs/server"
+import { getServerSession } from "next-auth/next"
+import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { Role } from "@prisma/client"
-import { redirect } from "next/navigation"
-import { RBACContext } from "./types"
+import { authOptions } from "@/app/api/auth/[...nextauth]/options"
 
 export async function getCurrentUser() {
-  const { userId } = await clerkAuth()
-
-  if (!userId) {
-    return null
-  }
-
-  const clerkUser = await clerkCurrentUser()
-  if (!clerkUser) {
-    return null
-  }
-
-  // Find or create user in our database
-  let user = await prisma.user.findUnique({
-    where: { clerkId: userId },
-    include: {
-      locations: {
-        include: {
-          location: true,
-        },
-      },
-    },
-  })
-
-  // If user doesn't exist, create them
-  if (!user) {
-    const email = clerkUser.emailAddresses[0]?.emailAddress
-    if (!email) {
-      throw new Error("User email not found")
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.email) {
+      return null
     }
 
-    user = await prisma.user.create({
-      data: {
-        clerkId: userId,
-        email,
-        name: clerkUser.firstName
-          ? `${clerkUser.firstName} ${clerkUser.lastName || ""}`.trim()
-          : email,
-        role: Role.REQUESTER, // Default role
-      },
-      include: {
-        locations: {
-          include: {
-            location: true,
-          },
-        },
-      },
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email }
     })
-  }
 
-  return user
+    return user
+  } catch (error) {
+    return null
+  }
 }
 
-export async function requireAuth() {
+export async function requireUser() {
   const user = await getCurrentUser()
+  
   if (!user) {
-    redirect("/sign-in")
+    redirect('/sign-in')
   }
+  
   return user
 }
 
 export async function requireRole(allowedRoles: Role[]) {
-  const user = await requireAuth()
+  const user = await requireUser()
+  
   if (!allowedRoles.includes(user.role)) {
-    throw new Error("Unauthorized: Insufficient permissions")
+    redirect('/')
   }
+  
   return user
 }
 
-export async function getRBACContext(): Promise<RBACContext> {
-  const user = await requireAuth()
-  const locationIds = user.locations.map((loc) => loc.location.id)
+export async function requireAdmin() {
+  return requireRole([Role.ADMIN])
+}
+
+export async function requireProcurement() {
+  return requireRole([Role.PROCUREMENT, Role.ADMIN])
+}
+
+// RBAC context for client components
+export async function getRBACContext() {
+  const user = await getCurrentUser()
+
+  if (!user) {
+    return {
+      user: null,
+      isAdmin: false,
+      isProcurement: false,
+      isRequester: false,
+      canManageRequisitions: false,
+      canManageProducts: false,
+      canManageUsers: false,
+      canManageLocations: false,
+    }
+  }
+
+  const isAdmin = user.role === Role.ADMIN
+  const isProcurement = user.role === Role.PROCUREMENT
+  const isRequester = user.role === Role.REQUESTER
 
   return {
-    userId: user.id,
-    role: user.role,
-    locationIds,
+    user,
+    isAdmin,
+    isProcurement,
+    isRequester,
+    canManageRequisitions: isAdmin || isProcurement,
+    canManageProducts: isAdmin || isProcurement,
+    canManageUsers: isAdmin,
+    canManageLocations: isAdmin,
   }
 }
 
-export function canAccessRequisition(
-  rbac: RBACContext,
-  requisition: { createdById: string; locationId: string }
-): boolean {
-  // ADMIN and PROCUREMENT can access all requisitions
-  if (rbac.role === Role.ADMIN || rbac.role === Role.PROCUREMENT) {
+// Helper functions for RBAC
+export function canAccessRequisition(userRole: Role, requisitionUserId: string, currentUserId: string) {
+  if (userRole === Role.ADMIN || userRole === Role.PROCUREMENT) {
     return true
   }
-
-  // REQUESTER can only access their own requisitions from their locations
-  return (
-    rbac.userId === requisition.createdById && rbac.locationIds.includes(requisition.locationId)
-  )
+  
+  return requisitionUserId === currentUserId
 }
 
 export function canEditRequisition(
-  rbac: RBACContext,
-  requisition: { createdById: string; locationId: string; status: string }
-): boolean {
-  // PROCUREMENT and ADMIN can edit any requisition
-  if (rbac.role === Role.ADMIN || rbac.role === Role.PROCUREMENT) {
-    return true
+  userRole: Role,
+  requisitionUserId: string,
+  currentUserId: string,
+  status: string
+) {
+  if (!canAccessRequisition(userRole, requisitionUserId, currentUserId)) {
+    return false
   }
-
-  // REQUESTER can edit their own DRAFT requisitions
-  return (
-    rbac.role === Role.REQUESTER &&
-    rbac.userId === requisition.createdById &&
-    rbac.locationIds.includes(requisition.locationId) &&
-    requisition.status === "DRAFT"
-  )
-}
-
-export function canChangeRequisitionStatus(rbac: RBACContext): boolean {
-  return rbac.role === Role.ADMIN || rbac.role === Role.PROCUREMENT
-}
-
-export function canReceiveItems(rbac: RBACContext, requisition: { locationId: string }): boolean {
-  // PROCUREMENT and ADMIN can receive
-  if (rbac.role === Role.ADMIN || rbac.role === Role.PROCUREMENT) {
-    return true
+  
+  // Only PROCUREMENT and ADMIN can edit after submission
+  if (status !== 'DRAFT' && userRole === Role.REQUESTER) {
+    return false
   }
-
-  // REQUESTER can confirm receipt for their location
-  return rbac.role === Role.REQUESTER && rbac.locationIds.includes(requisition.locationId)
+  
+  return true
 }
 
-export function canManageUsers(rbac: RBACContext): boolean {
-  return rbac.role === Role.ADMIN
+export function canChangeStatus(userRole: Role, fromStatus: string, toStatus: string) {
+  // REQUESTER can only change DRAFT to SUBMITTED
+  if (userRole === Role.REQUESTER) {
+    return fromStatus === 'DRAFT' && toStatus === 'SUBMITTED'
+  }
+  
+  // PROCUREMENT and ADMIN can change any status
+  return true
 }
-
-export function canManageLocations(rbac: RBACContext): boolean {
-  return rbac.role === Role.ADMIN
-}
-
-export function canManageCatalog(rbac: RBACContext): boolean {
-  return rbac.role === Role.ADMIN || rbac.role === Role.PROCUREMENT
-}
-

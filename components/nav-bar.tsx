@@ -71,13 +71,13 @@ export async function NavBar() {
             <p className="font-medium">{user.name}</p>
             <p className="text-xs text-muted-foreground">{user.role}</p>
           </div>
-          <a
-            href="/user-profile"
+          <Link
+            href="/api/auth/signout"
             className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 text-gray-600 transition-colors hover:bg-gray-300"
-            title="Profile"
+            title="Sign Out"
           >
             <User className="h-5 w-5" />
-          </a>
+          </Link>
         </div>
       </div>
     </nav>
