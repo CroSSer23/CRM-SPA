@@ -1,335 +1,154 @@
 # SPA Procurement System
 
-Централізована система закупівель для SPA-локацій у Лондоні. Система дозволяє керівникам локацій створювати закупочні листи, а відділу закупівель - обробляти заявки, формувати замовлення та відстежувати статуси.
+Централізована система закупівель для SPA-локацій у Лондоні.
 
-## Технічний стек
+## 🚀 Функціонал
 
-- **Frontend/Backend**: Next.js 14 (App Router) + TypeScript
-- **Database**: PostgreSQL (Neon/Supabase)
-- **ORM**: Prisma
-- **Authentication**: Clerk
-- **UI**: Tailwind CSS + shadcn/ui
-- **Icons**: lucide-react
-- **File Upload**: UploadThing
-- **Email**: Resend
-- **Notifications**: Slack Webhooks
-- **Validation**: Zod + react-hook-form
+- **Requisitions Management** - Створення та обробка закупочних листів
+- **RBAC** - 3 ролі (Admin, Procurement, Requester)
+- **Kanban Dashboard** - Візуалізація за статусами
+- **Product Catalog** - Управління продуктами та категоріями
+- **Locations & Users** - Управління локаціями та користувачами
+- **Activity Timeline** - Повна історія змін
+- **JWT Authentication** - Проста та безпечна авторизація
 
-## Основні можливості
+## 🛠️ Техстек
 
-### Ролі користувачів (RBAC)
+- **Frontend:** Next.js 14 (App Router), TypeScript, Tailwind CSS, shadcn/ui
+- **Backend:** Next.js API Routes, Prisma ORM
+- **Database:** PostgreSQL (Neon)
+- **Auth:** JWT через jose (Edge-safe)
+- **Deploy:** Vercel
 
-1. **REQUESTER** (Керівник локації)
-   - Створення та подання закупочних листів
-   - Перегляд своїх заявок
-   - Підтвердження отримання товарів
+## 👥 Тестові користувачі
 
-2. **PROCUREMENT** (Відділ закупівель)
-   - Перегляд усіх заявок
-   - Редагування кількості товарів
-   - Зміна статусів заявок
-   - Додавання номерів PO/Invoice
-   - Завантаження документів
+| Роль | Email | Пароль |
+|------|-------|---------|
+| Admin | admin@spa.com | admin123 |
+| Procurement | procurement@spa.com | procurement123 |
+| Requester | john@spa.com | john123 |
 
-3. **ADMIN** (Адміністратор)
-   - Повний доступ до системи
-   - Управління користувачами та ролями
-   - Управління локаціями
-   - Управління каталогом товарів
+## 📁 Структура проекту
 
-### Статуси requisitions
+```
+app/
+├── (dashboard)/          # Захищені сторінки з sidebar
+│   ├── dashboard/        # Kanban board
+│   ├── requisitions/     # Список, деталі, створення
+│   ├── catalog/          # Продукти та категорії
+│   ├── locations/        # Управління локаціями (ADMIN)
+│   └── users/            # Управління користувачами (ADMIN)
+├── api/                  # API routes
+│   ├── login/            # POST - JWT авторизація
+│   ├── logout/           # POST - вихід
+│   ├── register/         # POST - реєстрація
+│   ├── requisitions/     # CRUD + status/items/receive
+│   ├── products/         # CRUD продуктів
+│   ├── categories/       # CRUD категорій
+│   ├── locations/        # CRUD локацій
+│   └── users/            # Список користувачів
+├── sign-in/              # Сторінка входу
+└── sign-up/              # Сторінка реєстрації
 
-- **DRAFT** - Чернетка (не використовується, автоматично SUBMITTED)
-- **SUBMITTED** - Подано на розгляд
-- **EDITED** - Відредаговано відділом закупівель
-- **ORDERED** - Замовлено у постачальника
-- **PARTIALLY_RECEIVED** - Частково отримано
-- **RECEIVED** - Отримано повністю
-- **CLOSED** - Закрито
+components/
+├── sidebar.tsx           # Бокове меню з навігацією
+├── header.tsx            # Header з профілем
+├── status-badge.tsx      # Badge для статусів
+└── ui/                   # shadcn/ui компоненти
 
-### Функціональність
+lib/
+├── auth.ts               # Auth utilities + RBAC
+├── jwt.ts                # JWT токени через jose
+├── prisma.ts             # Prisma client
+└── validations.ts        # Zod schemas
+```
 
-- **Dashboard** - Kanban-дошка з requisitions за статусами
-- **Requisitions** - Створення, перегляд, редагування заявок
-- **Catalog** - Управління продуктами та категоріями
-- **Locations** - Управління локаціями та призначення товарів
-- **Users** - Управління користувачами та ролями
-- **Activity Log** - Повний журнал змін для кожної заявки
-- **Notifications** - Email (Resend) та Slack сповіщення
-- **File Uploads** - UploadThing для PO/Invoices/Photos
+## 🔐 RBAC
 
-## Встановлення та налаштування
+**REQUESTER:**
+- ✅ Створення requisitions для своїх локацій
+- ✅ Перегляд своїх requisitions
+- ✅ Submit requisitions
+- ❌ Редагування після submit
 
-### 1. Клонування репозиторію
+**PROCUREMENT:**
+- ✅ Перегляд всіх requisitions
+- ✅ Редагування items (approvedQty)
+- ✅ Зміна статусів
+- ✅ Додавання PO/Invoice
+- ✅ Управління каталогом
 
-\`\`\`bash
-git clone <your-repo-url>
-cd CRM-SPA
-\`\`\`
+**ADMIN:**
+- ✅ Повний доступ
+- ✅ Управління користувачами та ролями
+- ✅ Управління локаціями
+- ✅ Призначення користувачів до локацій
 
-### 2. Встановлення залежностей
+## 📦 Статуси Requisition
 
-\`\`\`bash
+```
+DRAFT → SUBMITTED → EDITED → ORDERED → PARTIALLY_RECEIVED → RECEIVED → CLOSED
+```
+
+## 🚀 Deployment
+
+**Production URL:** https://spa.crosser.software
+
+**Build автоматично:**
+1. Prisma generate
+2. Prisma db push (sync schema)
+3. Next.js build
+
+## 💻 Локальна розробка
+
+```bash
+# Встановити залежності
 npm install
-# або
-pnpm install
-# або
-yarn install
 
-# Встановити git hooks (для розробки)
-npx husky install
-\`\`\`
-
-### 3. Налаштування змінних середовища
-
-Створіть файл \`.env\` в корені проєкту:
-
-\`\`\`env
-# Database
-DATABASE_URL="postgresql://user:password@localhost:5432/procurement_db?schema=public"
-
-# App
+# Налаштувати .env.local
+DATABASE_URL="postgresql://..."
+JWT_SECRET="your-secret"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
-# Clerk Authentication
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
-CLERK_SECRET_KEY="sk_test_..."
-NEXT_PUBLIC_CLERK_SIGN_IN_URL="/sign-in"
-NEXT_PUBLIC_CLERK_SIGN_UP_URL="/sign-up"
-NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL="/"
-NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="/"
+# Синхронізувати схему БД
+npm run db:push
 
-# Email (Resend)
-RESEND_API_KEY="re_..."
-RESEND_FROM_EMAIL="noreply@yourdomain.com"
-
-# Slack
-SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..."
-
-# UploadThing
-UPLOADTHING_SECRET="sk_live_..."
-UPLOADTHING_APP_ID="your-app-id"
-\`\`\`
-
-### 4. Налаштування бази даних
-
-\`\`\`bash
-# Створити міграції
-npx prisma migrate dev
-
-# Згенерувати Prisma Client
-npx prisma generate
-
-# Заповнити базу тестовими даними
+# Створити тестові дані
 npm run db:seed
-\`\`\`
 
-### 5. Запуск проєкту
-
-\`\`\`bash
+# Запустити dev server
 npm run dev
-\`\`\`
+```
 
-Відкрийте [http://localhost:3000](http://localhost:3000) у браузері.
+## 📝 Environment Variables (Vercel)
 
-## Налаштування зовнішніх сервісів
+Необхідні:
+- `DATABASE_URL` - PostgreSQL connection string
+- `JWT_SECRET` - Secret key для JWT токенів
+- `NEXT_PUBLIC_APP_URL` - URL додатка
 
-### Clerk (Authentication)
+Опціональні:
+- `UPLOADTHING_SECRET` - Для завантаження файлів
+- `UPLOADTHING_APP_ID`
+- `RESEND_API_KEY` - Для email нотифікацій
+- `SLACK_WEBHOOK_URL` - Для Slack нотифікацій
 
-1. Створіть обліковий запис на [clerk.com](https://clerk.com)
-2. Створіть новий Application
-3. Скопіюйте API ключі до \`.env\`
-4. Налаштуйте Email/Password провайдер
-5. **Важливо:** Проєкт використовує Clerk Hosted Pages (auth відбувається на clerk.app, без custom pages)
+## 📚 API Documentation
 
-### Database (Neon/Supabase)
+Детальна документація API в файлі `API_DOCUMENTATION.md`
 
-**Neon:**
-1. Створіть обліковий запис на [neon.tech](https://neon.tech)
-2. Створіть новий проєкт
-3. Скопіюйте connection string до \`DATABASE_URL\`
+## ✅ Acceptance Criteria
 
-**Supabase:**
-1. Створіть обліковий запис на [supabase.com](https://supabase.com)
-2. Створіть новий проєкт
-3. В Settings → Database скопіюйте connection string (Session mode)
+- [x] Login + RBAC працює
+- [x] Requester може створювати requisitions
+- [x] Procurement може редагувати та змінювати статуси
+- [x] Activity timeline з історією
+- [x] Kanban board на Dashboard
+- [x] SAAS-style UI з sidebar
+- [x] Deploy на Vercel
 
-### UploadThing
+---
 
-1. Створіть обліковий запис на [uploadthing.com](https://uploadthing.com)
-2. Створіть новий App
-3. Скопіюйте Secret та App ID до \`.env\`
-
-### Resend (Email)
-
-1. Створіть обліковий запис на [resend.com](https://resend.com)
-2. Додайте та верифікуйте домен
-3. Створіть API ключ
-4. Скопіюйте до \`.env\`
-
-### Slack
-
-1. Створіть Incoming Webhook у вашому Slack workspace
-2. Перейдіть до [api.slack.com/apps](https://api.slack.com/apps)
-3. Create New App → From scratch
-4. Activate Incoming Webhooks
-5. Add New Webhook to Workspace
-6. Скопіюйте webhook URL до \`.env\`
-
-## Деплой на Vercel
-
-### 1. Push до GitHub
-
-\`\`\`bash
-git init
-git add .
-git commit -m "Initial commit"
-git remote add origin <your-repo-url>
-git push -u origin main
-\`\`\`
-
-### 2. Імпорт в Vercel
-
-1. Перейдіть на [vercel.com](https://vercel.com)
-2. New Project
-3. Import вашого GitHub репозиторію
-4. Додайте всі Environment Variables з \`.env\`
-5. Deploy
-
-### 3. Налаштування після деплою
-
-- Оновіть \`NEXT_PUBLIC_APP_URL\` на production URL
-- Оновіть Clerk allowed origins/redirects
-- Оновіть UploadThing allowed origins
-- Запустіть міграції БД: \`npx prisma migrate deploy\`
-
-## Корисні команди
-
-\`\`\`bash
-# Development
-npm run dev           # Запуск dev сервера
-npm run build         # Збірка для production
-npm run start         # Запуск production сервера
-
-# Database
-npm run db:generate   # Генерація Prisma Client
-npm run db:push       # Push schema до БД (без міграцій)
-npm run db:migrate    # Створити та застосувати міграцію
-npm run db:seed       # Заповнити БД тестовими даними
-npm run db:studio     # Відкрити Prisma Studio
-
-# Code Quality
-npm run lint          # ESLint
-npm run format        # Prettier
-\`\`\`
-
-## Структура проєкту
-
-\`\`\`
-├── app/
-│   ├── (dashboard)/          # Захищені сторінки
-│   │   ├── page.tsx          # Dashboard (Kanban)
-│   │   ├── requisitions/     # Requisitions pages
-│   │   ├── catalog/          # Catalog pages
-│   │   ├── locations/        # Locations management
-│   │   └── users/            # Users management
-│   ├── api/                  # API routes
-│   │   ├── requisitions/     # Requisitions API
-│   │   ├── products/         # Products API
-│   │   ├── categories/       # Categories API
-│   │   ├── locations/        # Locations API
-│   │   ├── users/            # Users API
-│   │   ├── attachments/      # Attachments API
-│   │   └── uploadthing/      # UploadThing config
-│   ├── layout.tsx            # Root layout
-│   └── globals.css           # Global styles
-├── components/
-│   ├── ui/                   # shadcn/ui components
-│   ├── nav-bar.tsx           # Navigation bar
-│   ├── status-badge.tsx      # Status badge component
-│   └── role-gate.tsx         # RBAC gate component
-├── lib/
-│   ├── prisma.ts             # Prisma client
-│   ├── auth.ts               # Auth utilities
-│   ├── validations.ts        # Zod schemas
-│   ├── types.ts              # TypeScript types
-│   ├── notifications.ts      # Email/Slack utilities
-│   ├── utils.ts              # Helper functions
-│   └── uploadthing.ts        # UploadThing config
-├── prisma/
-│   ├── schema.prisma         # Prisma schema
-│   └── seed.ts               # Seed script
-├── middleware.ts             # Clerk middleware
-└── package.json
-\`\`\`
-
-## Бізнес-правила
-
-1. **Submit requisition** - дозволено тільки якщо є хоча б 1 позиція
-2. **Edit items** - зміна \`approvedQty\` вимагає обов'язкового коментаря
-3. **Close requisition** - можливо тільки коли sum(receivedQty) == approvedQty
-4. **Optimistic locking** - перевірка \`updatedAt\` перед зміною статусу/items
-5. **Auto-notifications** - автоматичні сповіщення на ключові події
-
-## API Endpoints
-
-### Requisitions
-- \`GET /api/requisitions\` - Список з фільтрами
-- \`POST /api/requisitions\` - Створення (auto-submit)
-- \`GET /api/requisitions/[id]\` - Деталі
-- \`DELETE /api/requisitions/[id]\` - Видалення (тільки DRAFT)
-- \`PATCH /api/requisitions/[id]/status\` - Зміна статусу
-- \`PATCH /api/requisitions/[id]/items\` - Редагування items
-- \`PATCH /api/requisitions/[id]/receive\` - Прийняття товарів
-
-### Products
-- \`GET /api/products\` - Список з фільтрами
-- \`POST /api/products\` - Створення
-- \`GET /api/products/[id]\` - Деталі
-- \`PATCH /api/products/[id]\` - Оновлення
-- \`DELETE /api/products/[id]\` - Деактивація
-
-### Categories
-- \`GET /api/categories\` - Список
-- \`POST /api/categories\` - Створення
-
-### Locations
-- \`GET /api/locations\` - Список
-- \`POST /api/locations\` - Створення
-- \`POST /api/locations/[id]/assign\` - Призначення товару
-
-### Users
-- \`GET /api/users\` - Список
-- \`PATCH /api/users/[id]/role\` - Зміна ролі
-- \`POST /api/users/[id]/locations\` - Призначення до локації
-
-### Attachments
-- \`POST /api/attachments\` - Створення attachment запису
-
-## Troubleshooting
-
-### Database connection issues
-- Перевірте \`DATABASE_URL\` в \`.env\`
-- Переконайтеся що БД доступна
-- Спробуйте \`npx prisma db push\`
-
-### Clerk authentication issues
-- Перевірте API ключі
-- Переконайтеся що домен додано в Clerk dashboard
-- Очистіть cookies та спробуйте знову
-
-### UploadThing issues
-- Перевірте API ключі
-- Додайте localhost:3000 до allowed origins
-- Перевірте file size limits
-
-## License
-
-MIT
-
-## Підтримка
-
-Для питань та підтримки:
-- Email: support@yourdomain.com
-- Documentation: [Link to docs]
-
+**Version:** 3.0  
+**Auth:** Simple JWT  
+**Status:** Production Ready ✅
