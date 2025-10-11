@@ -54,7 +54,24 @@ async function getRequisitionsByStatus(rbac: { userId: string; role: Role; locat
 
 export default async function DashboardPage() {
   const rbac = await getRBACContext()
-  const requisitionsByStatus = await getRequisitionsByStatus(rbac)
+  
+  if (!rbac.user) {
+    return <div>Please sign in</div>
+  }
+
+  // Get user's location IDs
+  const userLocations = await prisma.locationUser.findMany({
+    where: { userId: rbac.user.id },
+    select: { locationId: true }
+  })
+  
+  const locationIds = userLocations.map(loc => loc.locationId)
+
+  const requisitionsByStatus = await getRequisitionsByStatus({
+    userId: rbac.user.id,
+    role: rbac.user.role,
+    locationIds
+  })
 
   const statuses: RequisitionStatus[] = [
     "SUBMITTED",
