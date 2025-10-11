@@ -17,6 +17,9 @@
 git clone <your-repo-url>
 cd CRM-SPA
 npm install
+
+# Встановити git hooks (для розробки)
+npx husky install
 ```
 
 ## 2. Налаштування `.env`

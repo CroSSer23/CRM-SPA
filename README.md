@@ -75,6 +75,9 @@ npm install
 pnpm install
 # або
 yarn install
+
+# Встановити git hooks (для розробки)
+npx husky install
 \`\`\`
 
 ### 3. Налаштування змінних середовища

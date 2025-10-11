@@ -1,0 +1,17 @@
+# Git hooks не потрібні для деплою
+.husky/
+
+# Dev files
+*.md
+!README.md
+
+# Tests (якщо будуть)
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Local env files
+.env.local
+.env*.local
+
