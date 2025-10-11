@@ -57,6 +57,9 @@ export async function getRBACContext() {
   if (!user) {
     return {
       user: null,
+      userId: '',
+      role: Role.REQUESTER,
+      locationIds: [] as string[],
       isAdmin: false,
       isProcurement: false,
       isRequester: false,
@@ -67,12 +70,23 @@ export async function getRBACContext() {
     }
   }
 
+  // Get user's location IDs
+  const userLocations = await prisma.locationUser.findMany({
+    where: { userId: user.id },
+    select: { locationId: true }
+  })
+  
+  const locationIds = userLocations.map(loc => loc.locationId)
+
   const isAdmin = user.role === Role.ADMIN
   const isProcurement = user.role === Role.PROCUREMENT
   const isRequester = user.role === Role.REQUESTER
 
   return {
     user,
+    userId: user.id,
+    role: user.role,
+    locationIds,
     isAdmin,
     isProcurement,
     isRequester,

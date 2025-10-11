@@ -59,19 +59,7 @@ export default async function DashboardPage() {
     return <div>Please sign in</div>
   }
 
-  // Get user's location IDs
-  const userLocations = await prisma.locationUser.findMany({
-    where: { userId: rbac.user.id },
-    select: { locationId: true }
-  })
-  
-  const locationIds = userLocations.map(loc => loc.locationId)
-
-  const requisitionsByStatus = await getRequisitionsByStatus({
-    userId: rbac.user.id,
-    role: rbac.user.role,
-    locationIds
-  })
+  const requisitionsByStatus = await getRequisitionsByStatus(rbac)
 
   const statuses: RequisitionStatus[] = [
     "SUBMITTED",
