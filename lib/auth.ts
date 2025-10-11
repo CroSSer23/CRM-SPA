@@ -36,7 +36,7 @@ export async function requireRole(allowedRoles: Role[]) {
   const user = await requireUser()
   
   if (!allowedRoles.includes(user.role)) {
-    redirect('/')
+    redirect('/dashboard')
   }
   
   return user
@@ -50,7 +50,7 @@ export async function requireProcurement() {
   return requireRole([Role.PROCUREMENT, Role.ADMIN])
 }
 
-// RBAC context for client components
+// Simple RBAC context - returns everything needed
 export async function getRBACContext() {
   const user = await getCurrentUser()
 
@@ -58,15 +58,11 @@ export async function getRBACContext() {
     return {
       user: null,
       userId: '',
-      role: Role.REQUESTER,
+      role: Role.REQUESTER as Role,
       locationIds: [] as string[],
       isAdmin: false,
       isProcurement: false,
       isRequester: false,
-      canManageRequisitions: false,
-      canManageProducts: false,
-      canManageUsers: false,
-      canManageLocations: false,
     }
   }
 
@@ -90,66 +86,5 @@ export async function getRBACContext() {
     isAdmin,
     isProcurement,
     isRequester,
-    canManageRequisitions: isAdmin || isProcurement,
-    canManageProducts: isAdmin || isProcurement,
-    canManageUsers: isAdmin,
-    canManageLocations: isAdmin,
   }
-}
-
-// Helper functions for RBAC
-export function canAccessRequisition(userRole: Role, requisitionUserId: string, currentUserId: string) {
-  if (userRole === Role.ADMIN || userRole === Role.PROCUREMENT) {
-    return true
-  }
-  
-  return requisitionUserId === currentUserId
-}
-
-export function canEditRequisition(
-  userRole: Role,
-  requisitionUserId: string,
-  currentUserId: string,
-  status: string
-) {
-  if (!canAccessRequisition(userRole, requisitionUserId, currentUserId)) {
-    return false
-  }
-  
-  // Only PROCUREMENT and ADMIN can edit after submission
-  if (status !== 'DRAFT' && userRole === Role.REQUESTER) {
-    return false
-  }
-  
-  return true
-}
-
-export function canChangeStatus(userRole: Role, fromStatus: string, toStatus: string) {
-  // REQUESTER can only change DRAFT to SUBMITTED
-  if (userRole === Role.REQUESTER) {
-    return fromStatus === 'DRAFT' && toStatus === 'SUBMITTED'
-  }
-  
-  // PROCUREMENT and ADMIN can change any status
-  return true
-}
-
-export function canManageCatalog(userRole: Role) {
-  return userRole === Role.ADMIN || userRole === Role.PROCUREMENT
-}
-
-export function canManageUsers(userRole: Role) {
-  return userRole === Role.ADMIN
-}
-
-export function canManageLocations(userRole: Role) {
-  return userRole === Role.ADMIN
-}
-
-export function canReceiveItems(userRole: Role) {
-  return userRole === Role.ADMIN || userRole === Role.PROCUREMENT
-}
-
-export function canChangeRequisitionStatus(userRole: Role) {
-  return userRole === Role.ADMIN || userRole === Role.PROCUREMENT
 }
