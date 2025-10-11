@@ -70,7 +70,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
     notFound()
   }
 
-  if (!canAccessRequisition(rbac, requisition)) {
+  if (!rbac.user || !canAccessRequisition(rbac.user.role, requisition.createdById, rbac.user.id)) {
     notFound()
   }
 
