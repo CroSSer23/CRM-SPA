@@ -1,6 +1,24 @@
 {
-  "buildCommand": "next build",
-  "framework": "nextjs",
-  "regions": ["lhr1"]
+  "redirects": [
+    {
+      "source": "/sign-in",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/sign-up", 
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/sign-in/(.*)",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/sign-up/(.*)",
+      "destination": "/",
+      "permanent": false
+    }
+  ]
 }
-
