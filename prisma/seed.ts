@@ -216,96 +216,18 @@ async function main() {
     )
   }
 
-  // Create sample requisitions
-  console.log("Creating sample requisitions...")
-  for (let i = 0; i < requesterUsers.length; i++) {
-    const requester = requesterUsers[i]
-    const location = locations[i]
-
-    // Create a submitted requisition
-    await prisma.requisition.create({
-      data: {
-        locationId: location.id,
-        createdById: requester.id,
-        status: "SUBMITTED",
-        note: "Monthly supply order",
-        items: {
-          create: [
-            {
-              productId: products[0].id,
-              requestedQty: 5,
-            },
-            {
-              productId: products[1].id,
-              requestedQty: 3,
-            },
-            {
-              productId: products[3].id,
-              requestedQty: 2,
-            },
-          ],
-        },
-        history: {
-          create: {
-            actorId: requester.id,
-            action: "SUBMIT",
-            toStatus: "SUBMITTED",
-            message: "Requisition submitted for approval",
-          },
-        },
-      },
-    })
-
-    // Create an ordered requisition
-    await prisma.requisition.create({
-      data: {
-        locationId: location.id,
-        createdById: requester.id,
-        status: "ORDERED",
-        poNumber: `PO-2025-${String(i + 1).padStart(4, "0")}`,
-        items: {
-          create: [
-            {
-              productId: products[5].id,
-              requestedQty: 10,
-              approvedQty: 10,
-            },
-            {
-              productId: products[6].id,
-              requestedQty: 15,
-              approvedQty: 12,
-            },
-          ],
-        },
-        history: {
-          create: [
-            {
-              actorId: requester.id,
-              action: "SUBMIT",
-              toStatus: "SUBMITTED",
-              message: "Requisition submitted",
-            },
-            {
-              actorId: procurementUser.id,
-              action: "ORDER",
-              fromStatus: "SUBMITTED",
-              toStatus: "ORDERED",
-              message: "Order placed with supplier",
-            },
-          ],
-        },
-      },
-    })
-  }
-
   console.log("✅ Seed completed successfully!")
   console.log(`
   Created:
   - ${categories.length} categories
   - ${products.length} products
   - ${locations.length} locations
-  - ${requesterUsers.length + 2} users (${requesterUsers.length} requesters, 1 procurement, 1 admin)
-  - Sample requisitions for each location
+  - 3 users (admin, procurement, requester)
+  
+  Test credentials:
+  - Admin: admin@spa.com / admin123
+  - Procurement: procurement@spa.com / procurement123
+  - Requester: john@spa.com / john123
   `)
 }
 
