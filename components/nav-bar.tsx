@@ -11,14 +11,14 @@ export async function NavBar() {
     <nav className="border-b bg-background">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
+          <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
             <ShoppingCart className="h-6 w-6" />
             <span>SPA Procurement</span>
           </Link>
 
           <div className="flex items-center gap-4">
             <Link
-              href="/"
+              href="/dashboard"
               className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
             >
               <LayoutDashboard className="h-4 w-4" />

@@ -1,8 +1,18 @@
-import { clerkMiddleware } from "@clerk/nextjs/server"
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
 
-// Simple middleware that protects all routes by default
-// Clerk automatically handles public routes (sign-in, sign-up)
-export default clerkMiddleware()
+// Define public routes
+const isPublicRoute = createRouteMatcher([
+  '/',  // Home/Landing page
+  '/api/uploadthing(.*)',  // UploadThing needs to be public
+  '/api/webhook(.*)',  // Webhooks need to be public
+])
+
+// Protect all routes except public ones
+export default clerkMiddleware((auth, request) => {
+  if (!isPublicRoute(request)) {
+    auth().protect()
+  }
+})
 
 export const config = {
   matcher: [

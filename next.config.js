@@ -18,30 +18,6 @@ const nextConfig = {
       },
     ],
   },
-  async redirects() {
-    return [
-      {
-        source: '/sign-in',
-        destination: '/',
-        permanent: false,
-      },
-      {
-        source: '/sign-up',
-        destination: '/',
-        permanent: false,
-      },
-      {
-        source: '/sign-in/:path*',
-        destination: '/',
-        permanent: false,
-      },
-      {
-        source: '/sign-up/:path*',
-        destination: '/',
-        permanent: false,
-      },
-    ]
-  },
 }
 
 module.exports = nextConfig
