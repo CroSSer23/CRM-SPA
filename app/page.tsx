@@ -22,18 +22,18 @@ export default async function HomePage() {
           Centralized procurement management for SPA locations in London
         </p>
         <div className="flex gap-4 justify-center">
-          <a 
-            href={`https://accounts.clerk.dev/sign-in?redirect_url=${encodeURIComponent(process.env.NEXT_PUBLIC_APP_URL || 'https://spa.crosser.software')}/dashboard`}
+          <Link 
+            href="/dashboard"
             className="inline-flex items-center justify-center rounded-md bg-slate-900 px-8 py-3 text-sm font-medium text-white transition-colors hover:bg-slate-700"
           >
             Sign In
-          </a>
-          <a 
-            href={`https://accounts.clerk.dev/sign-up?redirect_url=${encodeURIComponent(process.env.NEXT_PUBLIC_APP_URL || 'https://spa.crosser.software')}/dashboard`}
+          </Link>
+          <Link 
+            href="/dashboard"
             className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-8 py-3 text-sm font-medium text-slate-900 transition-colors hover:bg-slate-50"
           >
-            Sign Up
-          </a>
+            Get Started
+          </Link>
         </div>
       </div>
     </div>
