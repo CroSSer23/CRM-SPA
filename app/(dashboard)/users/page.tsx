@@ -4,9 +4,10 @@ import { useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Settings } from "lucide-react"
+import { Settings, Trash2, UserPlus, Edit, AlertTriangle } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface User {
@@ -25,12 +26,23 @@ interface Location {
   name: string
 }
 
+type DialogMode = 'create' | 'edit' | 'delete' | 'role' | null
+
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [locations, setLocations] = useState<Location[]>([])
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [newRole, setNewRole] = useState("")
+  const [dialogMode, setDialogMode] = useState<DialogMode>(null)
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "REQUESTER"
+  })
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     loadUsers()
@@ -49,18 +61,129 @@ export default function UsersPage() {
     setLocations(data.locations || [])
   }
 
-  const handleChangeRole = async () => {
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      email: "",
+      password: "",
+      role: "REQUESTER"
+    })
+    setError("")
+    setLoading(false)
+  }
+
+  const openCreateDialog = () => {
+    resetForm()
+    setDialogMode('create')
+  }
+
+  const openEditDialog = (user: User) => {
+    setSelectedUser(user)
+    setFormData({
+      name: user.name,
+      email: user.email,
+      password: "",
+      role: user.role
+    })
+    setError("")
+    setDialogMode('edit')
+  }
+
+  const openDeleteDialog = (user: User) => {
+    setSelectedUser(user)
+    setDialogMode('delete')
+  }
+
+  const closeDialog = () => {
+    setDialogMode(null)
+    setSelectedUser(null)
+    resetForm()
+  }
+
+  const handleCreateUser = async () => {
+    setError("")
+    setLoading(true)
+    
+    try {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      })
+      
+      const data = await res.json()
+      
+      if (!res.ok) {
+        setError(data.error || "Failed to create user")
+        setLoading(false)
+        return
+      }
+      
+      await loadUsers()
+      closeDialog()
+    } catch (err) {
+      setError("Network error")
+      setLoading(false)
+    }
+  }
+
+  const handleUpdateUser = async () => {
     if (!selectedUser) return
     
-    const res = await fetch(`/api/users/${selectedUser.id}/role`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: newRole })
-    })
+    setError("")
+    setLoading(true)
     
-    if (res.ok) {
-      loadUsers()
-      setDialogOpen(false)
+    try {
+      const updateData: any = {
+        name: formData.name,
+        email: formData.email,
+        role: formData.role
+      }
+      
+      if (formData.password) {
+        updateData.password = formData.password
+      }
+      
+      const res = await fetch(`/api/users/${selectedUser.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateData)
+      })
+      
+      const data = await res.json()
+      
+      if (!res.ok) {
+        setError(data.error || "Failed to update user")
+        setLoading(false)
+        return
+      }
+      
+      await loadUsers()
+      closeDialog()
+    } catch (err) {
+      setError("Network error")
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return
+    
+    setLoading(true)
+    
+    try {
+      const res = await fetch(`/api/users/${selectedUser.id}`, {
+        method: "DELETE"
+      })
+      
+      if (res.ok) {
+        await loadUsers()
+        closeDialog()
+      } else {
+        setLoading(false)
+      }
+    } catch (err) {
+      setLoading(false)
     }
   }
 
@@ -86,33 +209,31 @@ export default function UsersPage() {
     }
   }
 
-  const openRoleDialog = (user: User) => {
-    setSelectedUser(user)
-    setNewRole(user.role)
-    setDialogOpen(true)
-  }
-
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Users</h1>
-        <p className="text-muted-foreground">Manage users, roles and location assignments</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold">Users</h1>
+          <p className="text-muted-foreground text-sm hidden sm:block">Manage users, roles and location assignments</p>
+        </div>
+        <Button onClick={openCreateDialog}>
+          <UserPlus className="h-4 w-4 mr-2" />
+          <span className="hidden sm:inline">Add User</span>
+          <span className="sm:hidden">Add</span>
+        </Button>
       </div>
 
       <div className="space-y-3">
         {users.map((user) => (
           <Card key={user.id}>
             <CardContent className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-medium">{user.name}</h3>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <h3 className="font-medium truncate">{user.name}</h3>
                     <Badge>{user.role}</Badge>
-                    <Button size="icon" variant="ghost" onClick={() => openRoleDialog(user)}>
-                      <Settings className="h-3 w-3" />
-                    </Button>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-3">{user.email}</p>
+                  <p className="text-sm text-muted-foreground mb-3 truncate">{user.email}</p>
                   
                   <div className="flex gap-2 flex-wrap items-center">
                     <span className="text-xs text-muted-foreground">Locations:</span>
@@ -140,26 +261,92 @@ export default function UsersPage() {
                     </Select>
                   </div>
                 </div>
+                
+                <div className="flex gap-1 flex-shrink-0">
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    onClick={() => openEditDialog(user)}
+                    title="Edit user"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    onClick={() => openDeleteDialog(user)}
+                    className="text-destructive hover:text-destructive"
+                    title="Delete user"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Change Role Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {/* Create/Edit User Dialog */}
+      <Dialog open={dialogMode === 'create' || dialogMode === 'edit'} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Change User Role</DialogTitle>
+            <DialogTitle>
+              {dialogMode === 'create' ? 'Create New User' : 'Edit User'}
+            </DialogTitle>
             <DialogDescription>
-              Update role for {selectedUser?.name}
+              {dialogMode === 'create' 
+                ? 'Add a new user to the system' 
+                : `Update details for ${selectedUser?.name}`}
             </DialogDescription>
           </DialogHeader>
+          
+          {error && (
+            <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              {error}
+            </div>
+          )}
+          
           <div className="space-y-4">
             <div>
-              <Label>Role</Label>
-              <Select value={newRole} onValueChange={setNewRole}>
-                <SelectTrigger>
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="John Doe"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="john@example.com"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="password">
+                Password {dialogMode === 'edit' && <span className="text-muted-foreground text-xs">(leave empty to keep current)</span>}
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder={dialogMode === 'create' ? "Enter password" : "Enter new password"}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="role">Role</Label>
+              <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+                <SelectTrigger id="role">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -170,8 +357,46 @@ export default function UsersPage() {
               </Select>
             </div>
           </div>
+          
           <DialogFooter>
-            <Button onClick={handleChangeRole}>Update Role</Button>
+            <Button variant="outline" onClick={closeDialog} disabled={loading}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={dialogMode === 'create' ? handleCreateUser : handleUpdateUser}
+              disabled={loading}
+            >
+              {loading ? 'Saving...' : dialogMode === 'create' ? 'Create User' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={dialogMode === 'delete'} onOpenChange={(open) => !open && closeDialog()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Delete User
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete user <strong>{selectedUser?.name}</strong> ({selectedUser?.email})?
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={closeDialog} disabled={loading}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={handleDeleteUser}
+              disabled={loading}
+            >
+              {loading ? 'Deleting...' : 'Delete User'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
