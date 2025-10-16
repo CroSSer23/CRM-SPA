@@ -52,20 +52,50 @@ export async function PATCH(
     
     const body = await request.json()
     
-    console.log("=== TRYBE INVENTORY PATCH REQUEST ===")
+    console.log("=== TRYBE INVENTORY PUT REQUEST ===")
     console.log("Product ID:", params.id)
     console.log("Request body:", body)
     console.log("URL:", `${TRYBE_API_URL}/${params.id}`)
     
-    // Використовуємо PATCH для inventory/products (не потребує всіх полів)
+    // Спочатку отримуємо поточний продукт
+    const getResponse = await fetch(`${TRYBE_API_URL}/${params.id}`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${TRYBE_TOKEN}`,
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      }
+    })
+
+    if (!getResponse.ok) {
+      const errorText = await getResponse.text()
+      console.error("Failed to fetch current product:", errorText)
+      return NextResponse.json(
+        { error: "Failed to fetch current product", details: errorText },
+        { status: getResponse.status }
+      )
+    }
+
+    const currentProduct = await getResponse.json()
+    console.log("Current product data:", currentProduct.data)
+
+    // Мерджимо поточні дані з новими (PUT потребує всі поля)
+    const updateData = {
+      ...currentProduct.data,
+      ...body
+    }
+    
+    console.log("Merged update data:", updateData)
+    
+    // Використовуємо PUT для inventory/products
     const response = await fetch(`${TRYBE_API_URL}/${params.id}`, {
-      method: "PATCH",
+      method: "PUT",
       headers: {
         "Authorization": `Bearer ${TRYBE_TOKEN}`,
         "Accept": "application/json",
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(updateData)
     })
 
     console.log("Response status:", response.status)
@@ -97,7 +127,7 @@ export async function PATCH(
     console.log("TRYBE API Success Response:", data)
     return NextResponse.json(data)
   } catch (error) {
-    console.error("TRYBE PATCH Error:", error)
+    console.error("TRYBE PUT Error:", error)
     return NextResponse.json(
       { error: "Internal server error", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
