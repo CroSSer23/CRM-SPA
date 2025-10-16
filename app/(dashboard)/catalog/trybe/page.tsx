@@ -113,6 +113,8 @@ export default function TrybeCatalogPage() {
         return
       }
 
+      console.log("Sending PATCH request for product:", editingProduct.id, "with stock_level:", newStockLevel)
+      
       const res = await fetch(`/api/trybe/products/${editingProduct.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -121,9 +123,13 @@ export default function TrybeCatalogPage() {
         })
       })
 
+      console.log("PATCH Response status:", res.status)
+
       if (!res.ok) {
         const errorData = await res.json()
-        throw new Error(errorData.error || "Failed to update stock")
+        console.error("PATCH Error data:", errorData)
+        const errorMessage = errorData.details || errorData.error || "Failed to update stock"
+        throw new Error(`${errorMessage} (Status: ${res.status})`)
       }
 
       // Show success message
@@ -139,7 +145,25 @@ export default function TrybeCatalogPage() {
       await loadProducts(searchQuery)
     } catch (err) {
       console.error("Update stock error:", err)
-      alert(err instanceof Error ? err.message : "Failed to update stock level")
+      
+      // Show detailed error message
+      const errorMessage = err instanceof Error ? err.message : "Failed to update stock level"
+      
+      const errorToast = document.createElement('div')
+      errorToast.className = 'fixed bottom-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 max-w-md'
+      errorToast.innerHTML = `
+        <div class="flex items-start gap-2">
+          <svg class="h-5 w-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <div>
+            <p class="font-semibold">Update Failed</p>
+            <p class="text-sm">${errorMessage}</p>
+          </div>
+        </div>
+      `
+      document.body.appendChild(errorToast)
+      setTimeout(() => errorToast.remove(), 5000)
     } finally {
       setSaving(false)
     }

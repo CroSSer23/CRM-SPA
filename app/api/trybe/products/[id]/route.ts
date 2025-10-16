@@ -52,6 +52,11 @@ export async function PATCH(
     
     const body = await request.json()
     
+    console.log("=== TRYBE PATCH REQUEST ===")
+    console.log("Product ID:", params.id)
+    console.log("Request body:", body)
+    console.log("URL:", `${TRYBE_API_URL}/${params.id}`)
+    
     const response = await fetch(`${TRYBE_API_URL}/${params.id}`, {
       method: "PATCH",
       headers: {
@@ -62,23 +67,36 @@ export async function PATCH(
       body: JSON.stringify(body)
     })
 
+    console.log("Response status:", response.status)
+    console.log("Response headers:", Object.fromEntries(response.headers.entries()))
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
-      console.error("TRYBE API Error:", response.status, errorData)
+      const errorText = await response.text()
+      console.error("TRYBE API Error Response:", errorText)
+      
+      let errorData
+      try {
+        errorData = JSON.parse(errorText)
+      } catch {
+        errorData = { error: errorText }
+      }
+      
       return NextResponse.json(
         { 
           error: "Failed to update product in TRYBE", 
-          details: errorData.message || errorData.error,
-          errors: errorData.errors 
+          details: errorData.message || errorData.error || errorText,
+          errors: errorData.errors,
+          status: response.status
         },
         { status: response.status }
       )
     }
 
     const data = await response.json()
+    console.log("TRYBE API Success Response:", data)
     return NextResponse.json(data)
   } catch (error) {
-    console.error("TRYBE API Error:", error)
+    console.error("TRYBE PATCH Error:", error)
     return NextResponse.json(
       { error: "Internal server error", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
