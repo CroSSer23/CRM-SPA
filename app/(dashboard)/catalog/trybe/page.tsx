@@ -41,7 +41,7 @@ interface TrybeResponse {
 }
 
 export default function TrybeCatalogPage() {
-  console.log("🔵 TrybeCatalogPage component loaded - VERSION 2.0")
+  console.log("🔵 TrybeCatalogPage component loaded - VERSION 3.0")
   
   const [products, setProducts] = useState<TrybeProduct[]>([])
   const [loading, setLoading] = useState(true)
@@ -466,7 +466,10 @@ export default function TrybeCatalogPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleEditStock(product)}
+                          onClick={() => {
+                            console.log("🟢 BUTTON CLICKED!")
+                            handleEditStock(product)
+                          }}
                           className="h-8 px-2"
                         >
                           <Edit className="h-3.5 w-3.5 mr-1" />
