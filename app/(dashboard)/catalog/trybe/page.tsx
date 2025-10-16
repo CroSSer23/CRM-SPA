@@ -45,6 +45,7 @@ export default function TrybeCatalogPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [meta, setMeta] = useState<TrybeResponse["meta"] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [stockFilter, setStockFilter] = useState<"all" | "in_stock" | "out_of_stock">("all")
 
   useEffect(() => {
     loadProducts()
@@ -88,9 +89,39 @@ export default function TrybeCatalogPage() {
   }
 
   const formatCurrency = (amount: number | null, currency: string) => {
-    if (amount === null) return "—"
+    if (amount === null || amount === undefined || !isFinite(amount)) return "—"
     const symbol = currency === "gbp" ? "£" : currency.toUpperCase()
     return `${symbol}${(amount / 100).toFixed(2)}`
+  }
+
+  const calculateTotalStockValue = () => {
+    const total = filteredProducts.reduce((sum, p) => {
+      const value = p.stock_value || 0
+      // Перевіряємо чи значення валідне
+      if (!isFinite(value) || isNaN(value)) return sum
+      return sum + value
+    }, 0)
+    
+    // Перевіряємо фінальне значення
+    if (!isFinite(total) || isNaN(total) || total > Number.MAX_SAFE_INTEGER) {
+      return null
+    }
+    
+    return total
+  }
+
+  const calculateTotalStockItems = () => {
+    const total = filteredProducts.reduce((sum, p) => {
+      const level = p.stock_level || 0
+      if (!isFinite(level) || isNaN(level)) return sum
+      return sum + level
+    }, 0)
+    
+    if (!isFinite(total) || isNaN(total) || total > Number.MAX_SAFE_INTEGER) {
+      return 0
+    }
+    
+    return total
   }
 
   const getStockBadge = (level: number | null, reorderLevel: number | null) => {
@@ -103,6 +134,16 @@ export default function TrybeCatalogPage() {
     }
     return <Badge variant="default" className="bg-green-600">In Stock</Badge>
   }
+
+  const filteredProducts = products.filter((product) => {
+    if (stockFilter === "in_stock") {
+      return product.stock_level !== null && product.stock_level > 0
+    }
+    if (stockFilter === "out_of_stock") {
+      return product.stock_level === null || product.stock_level === 0
+    }
+    return true // "all"
+  })
 
   return (
     <div className="space-y-6">
@@ -129,9 +170,9 @@ export default function TrybeCatalogPage() {
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{meta.total}</div>
+              <div className="text-2xl font-bold">{filteredProducts.length}</div>
               <p className="text-xs text-muted-foreground">
-                Showing {meta.from}-{meta.to}
+                {stockFilter === "all" ? `Total ${meta.total}` : `Filtered from ${meta.total}`}
               </p>
             </CardContent>
           </Card>
@@ -144,7 +185,7 @@ export default function TrybeCatalogPage() {
             <CardContent>
               <div className="text-2xl font-bold">
                 {formatCurrency(
-                  products.reduce((sum, p) => sum + (p.stock_value || 0), 0),
+                  calculateTotalStockValue(),
                   products[0]?.currency || "gbp"
                 )}
               </div>
@@ -161,7 +202,7 @@ export default function TrybeCatalogPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {products.reduce((sum, p) => sum + (p.stock_level || 0), 0)}
+                {calculateTotalStockItems().toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground">
                 Total units in stock
@@ -171,9 +212,9 @@ export default function TrybeCatalogPage() {
         </div>
       )}
 
-      {/* Search */}
+      {/* Search and Filters */}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 space-y-4">
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -200,6 +241,39 @@ export default function TrybeCatalogPage() {
               </Button>
             )}
           </form>
+
+          {/* Stock Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Stock Filter:</span>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={stockFilter === "all" ? "default" : "outline"}
+                onClick={() => setStockFilter("all")}
+              >
+                All Products
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={stockFilter === "in_stock" ? "default" : "outline"}
+                onClick={() => setStockFilter("in_stock")}
+                className={stockFilter === "in_stock" ? "bg-green-600 hover:bg-green-700" : ""}
+              >
+                In Stock
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={stockFilter === "out_of_stock" ? "default" : "outline"}
+                onClick={() => setStockFilter("out_of_stock")}
+                className={stockFilter === "out_of_stock" ? "bg-red-600 hover:bg-red-700" : ""}
+              >
+                Out of Stock
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -228,10 +302,12 @@ export default function TrybeCatalogPage() {
               <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
               <p className="text-muted-foreground">Loading products...</p>
             </div>
-          ) : products.length === 0 ? (
+          ) : filteredProducts.length === 0 ? (
             <div className="text-center py-12">
               <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <p className="text-muted-foreground">No products found</p>
+              <p className="text-muted-foreground">
+                {products.length === 0 ? "No products found" : "No products match the selected filter"}
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -249,7 +325,7 @@ export default function TrybeCatalogPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {products.map((product) => (
+                  {filteredProducts.map((product) => (
                     <TableRow key={product.id}>
                       <TableCell>
                         <div>
