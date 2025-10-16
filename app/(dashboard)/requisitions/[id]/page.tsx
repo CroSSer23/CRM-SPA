@@ -86,7 +86,18 @@ export default function RequisitionDetailPage() {
     
     if (res.ok) {
       setStatusDialogOpen(false)
-      loadRequisition()
+      await loadRequisition()
+      // Show success toast
+      const toast = document.createElement('div')
+      toast.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50'
+      toast.textContent = 'Статус успішно змінено'
+      document.body.appendChild(toast)
+      setTimeout(() => toast.remove(), 3000)
+      
+      // Redirect to dashboard after short delay
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 1500)
     }
   }
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { StatusBadge } from "@/components/status-badge"
 import { RequisitionStatus } from "@prisma/client"
@@ -29,6 +29,11 @@ interface KanbanBoardProps {
 export function KanbanBoard({ initialData, userRole }: KanbanBoardProps) {
   const [requisitionsByStatus, setRequisitionsByStatus] = useState(initialData)
   const [draggedItem, setDraggedItem] = useState<{ id: string; fromStatus: RequisitionStatus } | null>(null)
+
+  // Sync with server data when initialData changes
+  useEffect(() => {
+    setRequisitionsByStatus(initialData)
+  }, [initialData])
 
   const statuses: RequisitionStatus[] = [
     "SUBMITTED",
@@ -98,12 +103,26 @@ export function KanbanBoard({ initialData, userRole }: KanbanBoardProps) {
       })
 
       if (!res.ok) {
-        // Revert on error
-        setRequisitionsByStatus(initialData)
+        // Revert on error - restore from current state before change
+        const revertData = { ...requisitionsByStatus }
+        const movedReq = revertData[toStatus].find(r => r.id === reqId)
+        if (movedReq) {
+          revertData[toStatus] = revertData[toStatus].filter(r => r.id !== reqId)
+          movedReq.status = fromStatus
+          revertData[fromStatus].unshift(movedReq)
+          setRequisitionsByStatus(revertData)
+        }
       }
     } catch (error) {
-      // Revert on error
-      setRequisitionsByStatus(initialData)
+      // Revert on error - restore from current state before change
+      const revertData = { ...requisitionsByStatus }
+      const movedReq = revertData[toStatus].find(r => r.id === reqId)
+      if (movedReq) {
+        revertData[toStatus] = revertData[toStatus].filter(r => r.id !== reqId)
+        movedReq.status = fromStatus
+        revertData[fromStatus].unshift(movedReq)
+        setRequisitionsByStatus(revertData)
+      }
     }
   }
 

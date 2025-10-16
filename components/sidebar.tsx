@@ -139,6 +139,18 @@ export function Sidebar({ userRole }: SidebarProps) {
                     >
                       Categories
                     </Link>
+                    <Link
+                      href="/catalog/trybe"
+                      onClick={() => setMobileOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                        pathname === '/catalog/trybe'
+                          ? "bg-slate-100 text-foreground font-medium"
+                          : "text-muted-foreground hover:bg-slate-50 hover:text-foreground"
+                      )}
+                    >
+                      TRYBE Catalog
+                    </Link>
                   </div>
                 )}
               </div>
