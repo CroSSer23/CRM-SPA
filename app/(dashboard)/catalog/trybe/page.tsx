@@ -108,7 +108,7 @@ export default function TrybeCatalogPage() {
       const newStockLevel = parseFloat(editStockLevel)
       
       if (isNaN(newStockLevel) || newStockLevel < 0) {
-        alert("Введіть коректне значення stock level (>= 0)")
+        alert("Please enter a valid stock level (>= 0)")
         setSaving(false)
         return
       }
@@ -126,21 +126,17 @@ export default function TrybeCatalogPage() {
         throw new Error(errorData.error || "Failed to update stock")
       }
 
-      // Оновлюємо локальні дані
-      setProducts(products.map(p => 
-        p.id === editingProduct.id 
-          ? { ...p, stock_level: newStockLevel }
-          : p
-      ))
-
-      // Показуємо success повідомлення
+      // Show success message
       const toast = document.createElement('div')
       toast.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50'
-      toast.textContent = 'Stock level успішно оновлено'
+      toast.textContent = 'Stock level updated successfully'
       document.body.appendChild(toast)
       setTimeout(() => toast.remove(), 3000)
 
       setEditDialogOpen(false)
+      
+      // Reload products from server to get fresh data
+      await loadProducts(searchQuery)
     } catch (err) {
       console.error("Update stock error:", err)
       alert(err instanceof Error ? err.message : "Failed to update stock level")
@@ -208,12 +204,12 @@ export default function TrybeCatalogPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">TRYBE Catalog</h1>
           <p className="text-muted-foreground">
-            Синхронізація товарів з TRYBE API
+            Synchronized products from TRYBE API
           </p>
         </div>
         <Button onClick={handleSync} disabled={syncing}>
@@ -465,10 +461,10 @@ export default function TrybeCatalogPage() {
       {/* Edit Stock Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
-          <DialogHeader>
+           <DialogHeader>
             <DialogTitle>Edit Stock Level</DialogTitle>
             <DialogDescription>
-              Оновіть рівень запасів для {editingProduct?.name}
+              Update stock level for {editingProduct?.name}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -483,8 +479,8 @@ export default function TrybeCatalogPage() {
                 onChange={(e) => setEditStockLevel(e.target.value)}
                 placeholder="Enter stock level"
               />
-              <p className="text-xs text-muted-foreground">
-                Поточний рівень: {editingProduct?.stock_level ?? "0"}
+               <p className="text-xs text-muted-foreground">
+                Current level: {editingProduct?.stock_level ?? "0"}
               </p>
             </div>
             {editingProduct && (
