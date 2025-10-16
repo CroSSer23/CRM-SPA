@@ -41,6 +41,8 @@ interface TrybeResponse {
 }
 
 export default function TrybeCatalogPage() {
+  console.log("🔵 TrybeCatalogPage component loaded - VERSION 2.0")
+  
   const [products, setProducts] = useState<TrybeProduct[]>([])
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
@@ -54,6 +56,7 @@ export default function TrybeCatalogPage() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
+    console.log("🔵 Component mounted, loading products")
     loadProducts()
   }, [])
 
@@ -95,19 +98,32 @@ export default function TrybeCatalogPage() {
   }
 
   const handleEditStock = (product: TrybeProduct) => {
+    console.log("=== handleEditStock called ===")
+    console.log("Product:", product)
     setEditingProduct(product)
     setEditStockLevel(product.stock_level?.toString() || "0")
     setEditDialogOpen(true)
   }
 
   const handleSaveStock = async () => {
-    if (!editingProduct) return
+    console.log("=== handleSaveStock called ===")
+    console.log("editingProduct:", editingProduct)
+    console.log("editStockLevel:", editStockLevel)
+    
+    if (!editingProduct) {
+      console.log("No editing product, returning")
+      return
+    }
 
     setSaving(true)
+    console.log("Saving state set to true")
+    
     try {
       const newStockLevel = parseFloat(editStockLevel)
+      console.log("Parsed stock level:", newStockLevel)
       
       if (isNaN(newStockLevel) || newStockLevel < 0) {
+        console.log("Invalid stock level:", newStockLevel)
         alert("Please enter a valid stock level (>= 0)")
         setSaving(false)
         return
