@@ -79,9 +79,12 @@ export async function PATCH(
     const currentProduct = await getResponse.json()
     console.log("Current product data:", currentProduct.data)
 
+    // Видаляємо readonly та вкладені поля (brand, category - це об'єкти, залишаємо тільки ID)
+    const { brand, category, deleted_at, ...cleanData } = currentProduct.data
+    
     // Мерджимо поточні дані з новими (PUT потребує всі поля)
     const updateData = {
-      ...currentProduct.data,
+      ...cleanData,
       ...body
     }
     
