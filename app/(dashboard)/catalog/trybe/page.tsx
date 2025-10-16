@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, RefreshCw, Package, TrendingUp, DollarSign } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Search, RefreshCw, Package, TrendingUp, DollarSign, Edit } from "lucide-react"
 
 interface TrybeProduct {
   id: string
@@ -46,6 +48,10 @@ export default function TrybeCatalogPage() {
   const [meta, setMeta] = useState<TrybeResponse["meta"] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [stockFilter, setStockFilter] = useState<"all" | "in_stock" | "out_of_stock">("all")
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<TrybeProduct | null>(null)
+  const [editStockLevel, setEditStockLevel] = useState<string>("")
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     loadProducts()
@@ -86,6 +92,61 @@ export default function TrybeCatalogPage() {
     setSyncing(true)
     await loadProducts(searchQuery)
     setSyncing(false)
+  }
+
+  const handleEditStock = (product: TrybeProduct) => {
+    setEditingProduct(product)
+    setEditStockLevel(product.stock_level?.toString() || "0")
+    setEditDialogOpen(true)
+  }
+
+  const handleSaveStock = async () => {
+    if (!editingProduct) return
+
+    setSaving(true)
+    try {
+      const newStockLevel = parseFloat(editStockLevel)
+      
+      if (isNaN(newStockLevel) || newStockLevel < 0) {
+        alert("Введіть коректне значення stock level (>= 0)")
+        setSaving(false)
+        return
+      }
+
+      const res = await fetch(`/api/trybe/products/${editingProduct.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stock_level: newStockLevel
+        })
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || "Failed to update stock")
+      }
+
+      // Оновлюємо локальні дані
+      setProducts(products.map(p => 
+        p.id === editingProduct.id 
+          ? { ...p, stock_level: newStockLevel }
+          : p
+      ))
+
+      // Показуємо success повідомлення
+      const toast = document.createElement('div')
+      toast.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50'
+      toast.textContent = 'Stock level успішно оновлено'
+      document.body.appendChild(toast)
+      setTimeout(() => toast.remove(), 3000)
+
+      setEditDialogOpen(false)
+    } catch (err) {
+      console.error("Update stock error:", err)
+      alert(err instanceof Error ? err.message : "Failed to update stock level")
+    } finally {
+      setSaving(false)
+    }
   }
 
   const formatCurrency = (amount: number | null, currency: string) => {
@@ -322,6 +383,7 @@ export default function TrybeCatalogPage() {
                     <TableHead className="text-right">Avg Cost</TableHead>
                     <TableHead className="text-right">Stock Value</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="text-center">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -364,6 +426,17 @@ export default function TrybeCatalogPage() {
                       <TableCell>
                         {getStockBadge(product.stock_level, product.reorder_level)}
                       </TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEditStock(product)}
+                          className="h-8 px-2"
+                        >
+                          <Edit className="h-3.5 w-3.5 mr-1" />
+                          Edit Stock
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -388,6 +461,72 @@ export default function TrybeCatalogPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Edit Stock Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Stock Level</DialogTitle>
+            <DialogDescription>
+              Оновіть рівень запасів для {editingProduct?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="stock-level">Stock Level</Label>
+              <Input
+                id="stock-level"
+                type="number"
+                step="0.01"
+                min="0"
+                value={editStockLevel}
+                onChange={(e) => setEditStockLevel(e.target.value)}
+                placeholder="Enter stock level"
+              />
+              <p className="text-xs text-muted-foreground">
+                Поточний рівень: {editingProduct?.stock_level ?? "0"}
+              </p>
+            </div>
+            {editingProduct && (
+              <div className="space-y-2 p-3 bg-slate-50 rounded-lg">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">SKU:</span>
+                  <span className="font-medium">{editingProduct.sku || "—"}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Reorder Level:</span>
+                  <span className="font-medium">{editingProduct.reorder_level || "—"}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Average Cost:</span>
+                  <span className="font-medium">
+                    {formatCurrency(editingProduct.average_cost, editingProduct.currency)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditDialogOpen(false)}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSaveStock} disabled={saving}>
+              {saving ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
